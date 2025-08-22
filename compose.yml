@@ -1,0 +1,66 @@
+services:
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: testdb
+      MYSQL_USER: testuser
+      MYSQL_PASSWORD: testpass
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./db-schema/configs/mysql.cnf:/etc/mysql/conf.d/mysql.cnf
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  schema-migration:
+    build:
+      context: ./db-schema
+      dockerfile: Dockerfile.sqldef
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      - ./db-schema/schemas:/app/schemas
+      - ./db-schema/scripts:/app/scripts
+      - ./db-schema/configs:/app/configs
+    environment:
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_NAME=testdb
+      - DB_USER=testuser
+      - DB_PASSWORD=testpass
+    working_dir: /app
+    command: ./scripts/apply-schema.sh --config configs/local.env --force
+    profiles:
+      - migration
+
+  rails:
+    build: .
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/rails
+    environment:
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_NAME=testdb
+      - DB_USER=testuser  
+      - DB_PASSWORD=testpass
+      - RAILS_ENV=development
+      - RAILS_MASTER_KEY=e92a771e83670e7b78e3617bbc60f3b5
+    working_dir: /rails
+    command: ./bin/rails server -b 0.0.0.0 -p 3000
+    stdin_open: true
+    tty: true
+
+volumes:
+  mysql_data:
