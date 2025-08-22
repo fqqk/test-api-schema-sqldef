@@ -118,6 +118,67 @@ posts.each do |post_attrs|
   puts "✅ Post: #{post.title}"
 end
 
+# Create sample comments
+rails_post = Post.find_by(slug: "getting-started-rails-8")
+js_post = Post.find_by(slug: "modern-javascript-best-practices")
+
+comments = [
+  {
+    post: rails_post,
+    user: jane,
+    content: "Great article! Rails 8 really does make Docker integration so much easier.",
+    status: "approved",
+    is_approved: true
+  },
+  {
+    post: rails_post,
+    author_name: "Anonymous Developer",
+    author_email: "dev@example.com",
+    content: "Thanks for the detailed walkthrough. The Docker setup was exactly what I was looking for!",
+    status: "approved",
+    is_approved: true
+  },
+  {
+    post: js_post,
+    user: bob,
+    content: "Solid advice on modern JavaScript. The async/await patterns you mentioned are game-changers.",
+    status: "approved", 
+    is_approved: true
+  },
+  {
+    post: rails_post,
+    user: john,
+    content: "Glad you found it helpful! Rails 8 has really streamlined the development process.",
+    status: "approved",
+    is_approved: true
+  }
+]
+
+comments.each do |comment_attrs|
+  comment = Comment.find_or_create_by!(
+    post: comment_attrs[:post], 
+    content: comment_attrs[:content]
+  ) do |c|
+    comment_attrs.each { |key, value| c.send("#{key}=", value) unless key == :post }
+  end
+  puts "✅ Comment: #{comment.content[0..50]}..."
+end
+
+# Create a reply comment
+parent_comment = Comment.first
+if parent_comment
+  reply = Comment.find_or_create_by!(
+    post: parent_comment.post,
+    parent: parent_comment,
+    content: "I completely agree! The Docker integration is seamless."
+  ) do |c|
+    c.user = bob
+    c.status = "approved"
+    c.is_approved = true
+  end
+  puts "✅ Reply: #{reply.content[0..50]}..."
+end
+
 puts "🎉 Seeding completed!"
 puts ""
 puts "📊 Database Summary:"
@@ -125,3 +186,5 @@ puts "   Users: #{User.count}"
 puts "   Categories: #{Category.count}"  
 puts "   Posts: #{Post.count}"
 puts "   Published Posts: #{Post.published.count}"
+puts "   Comments: #{Comment.count}"
+puts "   Approved Comments: #{Comment.approved.count}"

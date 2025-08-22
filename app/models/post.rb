@@ -3,6 +3,7 @@ class Post < ApplicationRecord
   
   has_many :post_categories, dependent: :destroy
   has_many :categories, through: :post_categories
+  has_many :comments, dependent: :destroy
   
   validates :title, presence: true
   validates :slug, presence: true, uniqueness: true
