@@ -6,6 +6,7 @@ Rails.application.routes.draw do
       end
       
       resources :posts, only: [:index, :show, :create, :update, :destroy] do
+        resources :comments, only: [:index, :create]
         member do
           patch :publish
           patch :unpublish
@@ -13,6 +14,7 @@ Rails.application.routes.draw do
       end
       
       resources :categories, only: [:index, :show, :create, :update, :destroy]
+      resources :comments, only: [:index, :show, :create, :update, :destroy]
     end
   end
   
